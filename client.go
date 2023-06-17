@@ -17,7 +17,7 @@ func (c *Client) Create(key, description string) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPost)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s", c.addr, key))
 	req.SetBodyString(description)
 
@@ -48,7 +48,7 @@ func (c *Client) Update(key string, value interface{}) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPut)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s", c.addr, key))
 	req.SetBodyString(fmt.Sprint(v))
 
@@ -79,7 +79,7 @@ func (c *Client) Add(key string, value interface{}) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPut)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s/add", c.addr, key))
 	req.SetBodyString(fmt.Sprint(v))
 
@@ -110,7 +110,7 @@ func (c *Client) Subtract(key string, value interface{}) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPut)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s/sub", c.addr, key))
 	req.SetBodyString(fmt.Sprint(v))
 
@@ -137,7 +137,7 @@ func (c *Client) Increment(key string) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPut)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s/inc", c.addr, key))
 
 	if err := a.Parse(); err != nil {
@@ -163,7 +163,7 @@ func (c *Client) Decrement(key string) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodPut)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s/dec", c.addr, key))
 
 	if err := a.Parse(); err != nil {
@@ -194,7 +194,7 @@ func (c *Client) Read(key string) (float64, error) {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodGet)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s", c.addr, key))
 
 	if err := a.Parse(); err != nil {
@@ -225,7 +225,7 @@ func (c *Client) Delete(key string) error {
 	a := fiber.AcquireAgent()
 	req := a.Request()
 	req.Header.SetMethod(fiber.MethodDelete)
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("authorization", "token "+c.apiKey)
 	req.SetRequestURI(fmt.Sprintf("%s/%s", c.addr, key))
 
 	if err := a.Parse(); err != nil {

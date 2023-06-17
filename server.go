@@ -140,13 +140,13 @@ func (srv *Server) initMiddlewares() {
 	srv.api.Use(idempotency.New())
 	srv.api.Use(
 		keyauth.New(keyauth.Config{
-			KeyLookup: "header:x-api-key",
+			KeyLookup: "header:Authorization",
 			Validator: func(ctx *fiber.Ctx, s string) (bool, error) {
 				if s == "" {
 					return false, errMissing
 				}
 				for _, k := range srv.apiKeys {
-					if s == k {
+					if s == "token "+k {
 						return true, nil
 					}
 				}
