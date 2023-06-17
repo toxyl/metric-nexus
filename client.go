@@ -71,6 +71,120 @@ func (c *Client) Update(key string, value interface{}) error {
 	return nil
 }
 
+func (c *Client) Add(key string, value interface{}) error {
+	v, ok := interfaceToFloat64(value)
+	if !ok {
+		return errors.New("could not parse value")
+	}
+	a := fiber.AcquireAgent()
+	req := a.Request()
+	req.Header.SetMethod(fiber.MethodPut)
+	req.Header.Set("x-api-key", c.apiKey)
+	req.SetRequestURI(fmt.Sprintf("%s/%s/add", c.addr, key))
+	req.SetBodyString(fmt.Sprint(v))
+
+	if err := a.Parse(); err != nil {
+		return err
+	}
+
+	if c.allowSelfSigned {
+		a = a.InsecureSkipVerify()
+	}
+	code, _, errs := a.Bytes()
+
+	if code != fiber.StatusNoContent {
+		if len(errs) > 0 {
+			return errors.Join(errs...)
+		}
+		return errors.New("failed to update metric")
+	}
+
+	return nil
+}
+
+func (c *Client) Subtract(key string, value interface{}) error {
+	v, ok := interfaceToFloat64(value)
+	if !ok {
+		return errors.New("could not parse value")
+	}
+	a := fiber.AcquireAgent()
+	req := a.Request()
+	req.Header.SetMethod(fiber.MethodPut)
+	req.Header.Set("x-api-key", c.apiKey)
+	req.SetRequestURI(fmt.Sprintf("%s/%s/sub", c.addr, key))
+	req.SetBodyString(fmt.Sprint(v))
+
+	if err := a.Parse(); err != nil {
+		return err
+	}
+
+	if c.allowSelfSigned {
+		a = a.InsecureSkipVerify()
+	}
+	code, _, errs := a.Bytes()
+
+	if code != fiber.StatusNoContent {
+		if len(errs) > 0 {
+			return errors.Join(errs...)
+		}
+		return errors.New("failed to update metric")
+	}
+
+	return nil
+}
+
+func (c *Client) Increment(key string) error {
+	a := fiber.AcquireAgent()
+	req := a.Request()
+	req.Header.SetMethod(fiber.MethodPut)
+	req.Header.Set("x-api-key", c.apiKey)
+	req.SetRequestURI(fmt.Sprintf("%s/%s/inc", c.addr, key))
+
+	if err := a.Parse(); err != nil {
+		return err
+	}
+
+	if c.allowSelfSigned {
+		a = a.InsecureSkipVerify()
+	}
+	code, _, errs := a.Bytes()
+
+	if code != fiber.StatusNoContent {
+		if len(errs) > 0 {
+			return errors.Join(errs...)
+		}
+		return errors.New("failed to increment metric")
+	}
+
+	return nil
+}
+
+func (c *Client) Decrement(key string) error {
+	a := fiber.AcquireAgent()
+	req := a.Request()
+	req.Header.SetMethod(fiber.MethodPut)
+	req.Header.Set("x-api-key", c.apiKey)
+	req.SetRequestURI(fmt.Sprintf("%s/%s/dec", c.addr, key))
+
+	if err := a.Parse(); err != nil {
+		return err
+	}
+
+	if c.allowSelfSigned {
+		a = a.InsecureSkipVerify()
+	}
+	code, _, errs := a.Bytes()
+
+	if code != fiber.StatusNoContent {
+		if len(errs) > 0 {
+			return errors.Join(errs...)
+		}
+		return errors.New("failed to increment metric")
+	}
+
+	return nil
+}
+
 func (c *Client) CreateUpdate(key, description string, value interface{}) error {
 	_ = c.Create(key, description)
 	return c.Update(key, value)

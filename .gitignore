@@ -19,3 +19,7 @@
 
 # Go workspace file
 go.work
+
+app/server/config.state.yaml
+app/server/metric-nexus-server
+app/client/metric-nexus-client

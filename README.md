@@ -60,6 +60,10 @@ The client has the following methods:
 | `Update(key string, value interface{})` | `error` | Set the metric to the given value (casted to `float64`). |
 | `CreateUpdate(key, description string, value interface{})` | `error` | First creates and then sets the metric. |
 | `Read(key string)` | `(float64, error)` | Reads the metric. If an error occurs it will be returned as the second value. |
+| `Increment(key string)` | `error` | Increments the metric. |
+| `Decrement(key string)` | `error` | Decrements the metric. |
+| `Add(key string, value interface{})` | `error` | Add the given value to the metric. |
+| `Subtract(key string, value interface{})` | `error` | Subtracts the given value from the metric. |
 | `Delete(key string)` | `error` | Unregisters the metric and removes it from the known metrics. **WARNING**: Creating the metric again, but with a different description, will cause a crash!  |
 
 ## API
@@ -70,4 +74,8 @@ If you need to control metrics from a non-Go application, you can utilize the RE
 | `POST /:metric` | | 201 | Creates a new metric with the provided key and uses the request body as its description. |
 | `GET /:metric` | float64 | 200 | Retrieves and returns the value of the specified metric. |
 | `PUT /:metric` | | 204 | Updates the specified metric with the value from the request body. |
+| `PUT /:metric/inc` | | 204 | Increments the specified metric. |
+| `PUT /:metric/dec` | | 204 | Decrements the specified metric. |
+| `PUT /:metric/add` | | 204 | Adds the value from the request body to the specified metric. |
+| `PUT /:metric/sub` | | 204 | Subtracts the value from the request body from the specified metric. |
 | `DELETE /:metric` | | 204 | **DANGER!** Unregisters the specified metric and removes it from the known metric list. Re-adding the metric with a different description will cause a crash! |

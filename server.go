@@ -88,6 +88,54 @@ func (srv *Server) Delete(key string) bool {
 	return false
 }
 
+func (srv *Server) Increment(key string) bool {
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	key = sanitizeKey(key)
+	if m, ok := srv.data[key]; ok {
+		m.inc()
+		return true
+	}
+	return false
+}
+
+func (srv *Server) Decrement(key string) bool {
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	key = sanitizeKey(key)
+	if m, ok := srv.data[key]; ok {
+		m.dec()
+		return true
+	}
+	return false
+}
+
+func (srv *Server) Add(key string, v interface{}) bool {
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	key = sanitizeKey(key)
+	if m, ok := srv.data[key]; ok {
+		if f, ok := interfaceToFloat64(v); ok {
+			m.add(f)
+			return true
+		}
+	}
+	return false
+}
+
+func (srv *Server) Sub(key string, v interface{}) bool {
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	key = sanitizeKey(key)
+	if m, ok := srv.data[key]; ok {
+		if f, ok := interfaceToFloat64(v); ok {
+			m.sub(f)
+			return true
+		}
+	}
+	return false
+}
+
 func (srv *Server) initMiddlewares() {
 	srv.api.Use(idempotency.New())
 	srv.api.Use(
@@ -139,6 +187,42 @@ func (srv *Server) initAPI() {
 			return c.SendStatus(fiber.StatusNoContent)
 		}
 		return c.SendStatus(fiber.StatusNotFound)
+	})
+
+	// INCREMENT handler
+	srv.api.Put("/:metric/inc", func(c *fiber.Ctx) error {
+		if srv.Increment(c.Params("metric")) {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		// if we get here the metric already exists
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	// DECREMENT handler
+	srv.api.Put("/:metric/dec", func(c *fiber.Ctx) error {
+		if srv.Decrement(c.Params("metric")) {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		// if we get here the metric already exists
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	// ADD handler
+	srv.api.Put("/:metric/add", func(c *fiber.Ctx) error {
+		if srv.Add(c.Params("metric"), string(c.Body())) {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		// if we get here the metric already exists
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	// SUB handler
+	srv.api.Put("/:metric/sub", func(c *fiber.Ctx) error {
+		if srv.Sub(c.Params("metric"), string(c.Body())) {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		// if we get here the metric already exists
+		return c.SendStatus(fiber.StatusOK)
 	})
 
 	// DELETE handler

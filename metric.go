@@ -35,6 +35,34 @@ func (m *metric) set(v interface{}) {
 	}
 }
 
+func (m *metric) add(v float64) float64 {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	v = m.value + v
+	m.gauge.Set(v)
+	m.value = v
+
+	for i, mtr := range state.Metrics {
+		if mtr.Key == m.key {
+			state.Metrics[i].Value = v
+			break
+		}
+	}
+	return v
+}
+
+func (m *metric) sub(v float64) float64 {
+	return m.add(-v)
+}
+
+func (m *metric) inc() float64 {
+	return m.add(1)
+}
+
+func (m *metric) dec() float64 {
+	return m.sub(1)
+}
+
 func (m *metric) get() float64 {
 	m.lock.Lock()
 	defer m.lock.Unlock()
