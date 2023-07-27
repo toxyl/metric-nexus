@@ -9,10 +9,10 @@ import (
 
 type metric struct {
 	gauge       prometheus.Gauge
+	lock        *sync.Mutex
 	key         string
 	description string
 	value       float64
-	lock        *sync.Mutex
 }
 
 func (m *metric) set(v interface{}) {
@@ -21,17 +21,9 @@ func (m *metric) set(v interface{}) {
 	if f, ok := interfaceToFloat64(v); ok {
 		m.gauge.Set(f)
 		m.value = f
-		for i, mtr := range state.Metrics {
-			if mtr.Key == m.key {
-				state.Metrics[i].Value = f
-				return
-			}
+		if !state.SetValue(m.key, f) {
+			state.Append(m.key, m.description, m.value)
 		}
-		state.Metrics = append(state.Metrics, StateMetric{
-			Key:         m.key,
-			Description: m.description,
-			Value:       m.value,
-		})
 	}
 }
 
@@ -42,12 +34,7 @@ func (m *metric) add(v float64) float64 {
 	m.gauge.Set(v)
 	m.value = v
 
-	for i, mtr := range state.Metrics {
-		if mtr.Key == m.key {
-			state.Metrics[i].Value = v
-			break
-		}
-	}
+	_ = state.SetValue(m.key, v)
 	return v
 }
 
@@ -75,10 +62,10 @@ func newMetric(key, description string) *metric {
 			Name: key,
 			Help: description,
 		}),
+		lock:        &sync.Mutex{},
 		key:         key,
 		description: description,
 		value:       0.0,
-		lock:        &sync.Mutex{},
 	}
 	return mc
 }

@@ -8,6 +8,7 @@ The library consists of a server and a client, both leveraging the `fiber` frame
 - **Stateful Server**: Each server is stateful and automatically saves its current metrics every minute. In case of server restarts, the metrics are preserved, ensuring seamless processing continuity.
 - **API Key Authentication**: The server is secured with API key authentication. Only authorized clients with valid API keys can access and manipulate the metrics.
 - **Automatic Self-Signed Certificate**: When the server is started without a key file and a certificate file (either empty strings or both files do not exist), the library automatically generates a self-signed certificate. 
+- **Activity Monitoring** The server will regularly check how many clients have been active within the last hour. It will expose that value via the `metric_nexus_clients` metric.
 
 ## Use Case Examples
 Here are a couple of use case examples highlighting the versatility of MetricNexus:

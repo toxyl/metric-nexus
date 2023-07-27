@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +23,36 @@ type StateMetric struct {
 }
 
 type State struct {
+	lock    *sync.Mutex
 	Metrics []StateMetric `yaml:"metrics"`
+}
+
+func (s *State) Append(k, d string, v float64) {
+	if s.lock == nil {
+		s.lock = &sync.Mutex{}
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.Metrics = append(s.Metrics, StateMetric{
+		Key:         k,
+		Description: d,
+		Value:       v,
+	})
+}
+
+func (s *State) SetValue(k string, v float64) bool {
+	if s.lock == nil {
+		s.lock = &sync.Mutex{}
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for i, mtr := range s.Metrics {
+		if mtr.Key == k {
+			s.Metrics[i].Value = v
+			return true
+		}
+	}
+	return false
 }
 
 func loadState(file string) error {

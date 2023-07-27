@@ -25,12 +25,13 @@ var (
 )
 
 type Server struct {
-	addr      string
-	stateFile string
-	api       *fiber.App
-	apiKeys   []string
-	data      map[string]*metric
-	lock      *sync.Mutex
+	addr            string
+	stateFile       string
+	api             *fiber.App
+	lock            *sync.Mutex
+	apiKeys         []string
+	clientsLastSeen map[string]time.Time
+	data            map[string]*metric
 }
 
 func (srv *Server) Create(key, description string, value interface{}) bool {
@@ -147,10 +148,13 @@ func (srv *Server) initMiddlewares() {
 				}
 				for _, k := range srv.apiKeys {
 					if s == "token "+k {
+						rip := ctx.Context().RemoteIP().String()
+						srv.lock.Lock()
+						srv.clientsLastSeen[rip] = time.Now()
+						srv.lock.Unlock()
 						return true, nil
 					}
 				}
-
 				return false, errInvalid
 			},
 		}),
@@ -232,7 +236,6 @@ func (srv *Server) initAPI() {
 		}
 		return c.SendStatus(fiber.StatusNotFound)
 	})
-
 }
 
 func (srv *Server) AddAPIKey(key string) {
@@ -268,15 +271,36 @@ func (srv *Server) Start(keyFile, certFile string) error {
 		return err
 	}
 
+	go func() {
+		srv.Create("metric_nexus_clients", "The total number of clients that used MetricNexus within the last hour.", 0)
+		// Indefinitely check when clients were last seen,
+		// if it's more than one hour ago we assume they
+		// are inactive and remove them from the activity list.
+		for {
+			cutoff := time.Now().Add(-time.Hour)
+			srv.lock.Lock()
+			for ip, lastSeen := range srv.clientsLastSeen {
+				if cutoff.After(lastSeen) {
+					delete(srv.clientsLastSeen, ip)
+				}
+			}
+			activeClients := len(srv.clientsLastSeen)
+			srv.lock.Unlock()
+			srv.Update("metric_nexus_clients", activeClients)
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
 	return srv.api.ListenTLS(srv.addr, certFile, keyFile)
 }
 
 func NewServer(host string, port int, stateFile string) *Server {
 	srv := &Server{
-		addr:      fmt.Sprintf("%s:%d", host, port),
-		stateFile: stateFile,
-		data:      map[string]*metric{},
-		lock:      &sync.Mutex{},
+		addr:            fmt.Sprintf("%s:%d", host, port),
+		stateFile:       stateFile,
+		lock:            &sync.Mutex{},
+		data:            map[string]*metric{},
+		clientsLastSeen: map[string]time.Time{},
 	}
 	return srv
 }
